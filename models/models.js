@@ -51,3 +51,31 @@ export const apiKEYs = sequelize.define("apikeys", {
     type: DataTypes.STRING,
   },
 });
+
+/**
+ *  This will create a migration
+ *  Model Migrations for queued locations
+ * 
+ */
+export const queuedLocationModel = sequelize.define('queued-locations', {
+  id: {
+    primaryKey: true,
+    type: DataTypes.INTEGER,
+    autoIncrement:true,
+  },
+  latitude: {
+    type: DataTypes.STRING,
+  },
+  longitude: {
+    type: DataTypes.STRING,
+  },
+  backUrl: {
+    type: DataTypes.STRING,
+  },
+  corresponding_location: {
+    type: DataTypes.STRING,
+  },
+  isQueued: {
+    type: DataTypes.BOOLEAN,
+  },
+})
