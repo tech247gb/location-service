@@ -70,7 +70,14 @@ export const queuedLocationModel = sequelize.define('queued-locations', {
     type: DataTypes.STRING,
   },
   backUrl: {
-    type: DataTypes.STRING,
+    type: DataTypes.TEXT, // Update data type to TEXT
+    get() {
+      const backUrlString = this.getDataValue('backUrl');
+      return backUrlString ? JSON.parse(backUrlString) : null; // Deserialize the JSON string to an array
+    },
+    set(backUrlArray) {
+      this.setDataValue('backUrl', JSON.stringify(backUrlArray)); // Serialize the array to a JSON string
+    },
   },
   corresponding_location: {
     type: DataTypes.STRING,

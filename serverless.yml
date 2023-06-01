@@ -1,0 +1,21 @@
+service: location-services
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: ap-south-1
+
+functions:
+  api:
+    handler: index.handler
+    timeout: 120
+    events:
+      - httpApi: '*'
+  myScheduledTask:
+    handler: index.myScheduledTask
+    timeout: 120
+    events:
+      - schedule: rate(5 minutes)
+plugins:
+  - serverless-offline
