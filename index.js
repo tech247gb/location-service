@@ -31,6 +31,8 @@ import cors from "cors";
 import { allowedIPs, apiKEYs } from "./models/models.js";
 import serverless from "serverless-http";
 import axios from "axios";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 
@@ -100,12 +102,10 @@ export const myScheduledTask = async (event, context) => {
       // url:`http://localhost:3000/api/insertdata`,
       headers: { 'apikey': 'thisismyapikey' }
     }).then((res)=>{
-      console.log("eeeeeeeeeeeeeeeeeeeeeeeeee",res.data);
-      console.log('Ended the -------------------This is a scheduled task. for every 2 minutes');
 
-    }).catch(err=>console.log("000000000000000000000000000000000000",err))
+    }).catch(err=>console.log("Error occured when running cron",err?.message))
    }catch(err){
-    console.log("My schedule task error",err)
+    console.log("My schedule task error",err?.message)
    }
 
 };

@@ -3,15 +3,17 @@ import { connectToDb } from "./config/dbConfig.js";
 import Routes from "./routes/route.js";
 import cors from "cors";
 import { allowedIPs, apiKEYs } from "./models/models.js";
-
+import dotenv from "dotenv";
+dotenv.config();
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cors());
-
-app.listen(3001, async () => {
-  console.log("Server started at port 3001");
+const PORT = process.env.PORT
+console.log("The port",PORT)
+app.listen(PORT, async () => {
+  console.log("Server started at port :" ,PORT);
   await connectToDb();
 })
 
