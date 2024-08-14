@@ -23,6 +23,10 @@ export const getAllDatas = async (req, res) => {
   }
 };
 
+/**
+ * 
+ *Function for checking location already in table or insert into location queue table
+ */
 export const addDatas = async (req, res) => {
   const query =
     "6371 * acos(cos(radians(" +
@@ -45,25 +49,12 @@ export const addDatas = async (req, res) => {
     } else {
       const { lat, lng ,url} = req.body;
       const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
-      let limit = await limitModel.findOne();
-      // if (limit) {
-      //   let currentDate = moment().format("YYYY-MM-DD");
-      //   let limitExpiry = moment(limit.updatedAt).format("YYYY-MM-DD");
-      //   if (currentDate !== limitExpiry) {
-      //     limit.count = 0;
-      //   } else if (limit.count >= 100) {
-      //     return res
-      //       .status(409)
-      //       .json({ message: "API limit reached, try again tomorrow" });
-      //   }
-      // }
+
      const isLocationAlreadyExistInQueuedTable = await checkLatAndLongIsAlreadyExistInQuedLocationTable(lat ,lng)
      console.log("isLocationAlreadyExistInQueuedTable" ,isLocationAlreadyExistInQueuedTable)
      if(isLocationAlreadyExistInQueuedTable.success ===false){
      const checkLocationRadius = await checkLocationIsInsideRadius(lat ,lng)
      console.log("check the location info" ,checkLocationRadius)
-        //  if(!checkLocationRadius){
-          // return res.send("rtrue")
       if(checkLocationRadius.success === false){
         const backUrlArray =[url]
         // console.log("array of back url new creating",backUrlArray)
@@ -74,25 +65,20 @@ export const addDatas = async (req, res) => {
             corresponding_location:'empty',
             isQueued:true
           });
-          // console.log("insertDataIntoQueuedLocation" ,insertDataIntoQueuedLocation)
           res.status(201).json({data:"inserted",message:"Location is inserted into queue"})
       }else if(checkLocationRadius.success === true) {
         const similarLocationDetails = await queuedLocationModel.findOne({
           where:{id:checkLocationRadius.coords.id}})
         let backUrlArray = similarLocationDetails.backUrl
-        // backUrlArray=[...backUrlArray,url]
         backUrlArray.push(url)
         similarLocationDetails.backUrl=backUrlArray
         similarLocationDetails.save()
-        // console.log("similare results-------------",backUrlArray)
-
         res.status(201).json({data:"similar",coords:{latitude:checkLocationRadius.coords.latitude,longitude:checkLocationRadius.coords.longitude}, message:"This Location is less than 2km radius , near by location is already in queue"})
       }
      }else{
       const sameLocationDetails = await queuedLocationModel.findOne({
         where:{id:isLocationAlreadyExistInQueuedTable?.coords?.id}})
       let backUrlArray = sameLocationDetails.backUrl
-      // backUrlArray=[...backUrlArray,url]
       backUrlArray.push(url)
       sameLocationDetails.backUrl=backUrlArray
       sameLocationDetails.save()
@@ -110,7 +96,6 @@ export const addDatas = async (req, res) => {
 const checkLatAndLongIsAlreadyExistInQuedLocationTable  = (lat , lng) =>{
   return new Promise( async (resolve ,reject)=>{
     try{
-      // console.log("lattttttttttttttttttt",lat,"33333333333333333333",lng);
       const locationAlreadyQueued = await queuedLocationModel.findAll({
         where: {
           [Op.and]: [
@@ -141,7 +126,6 @@ const checkLatAndLongIsAlreadyExistInQuedLocationTable  = (lat , lng) =>{
 const checkLocationIsInsideRadius = (lat ,lng) =>{
   return new Promise(async(resolve,reject)=>{
     try {
-      // console.log("&&&&&&&&&&&&&&&&&&&",lat,"!!!!!!!!!!!!!!!!!!!!!!",lng);
       const query =
       "6371 * acos(cos(radians(" +
       lat +
@@ -188,9 +172,6 @@ export const getLocationFromGoogleApi =async (req , res) =>{
 console.log("the location function is called")
 const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
   let limit = await limitModel.findOne();
-  let isLimitAlreadyCreated = limit == null ? true:false
-  // console.log("lo))))))))",!limit)
-  // return false
   if (limit) {
     let currentDate = moment().format("YYYY-MM-DD");
     let limitExpiry = moment(limit.updatedAt).format("YYYY-MM-DD");
@@ -216,10 +197,12 @@ const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
           axiosRateLimiter(req, res, async () => {
             try {
               const response = await axios.get(
-                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${getSingleLocation.latitude},${getSingleLocation.longitude}&key=AIzaSyDtal5kkek9odt5atw0tBpaYJOJat0Qjjo`
+                `https://maps.googleapis.com/maps/api/geocode/json?latlng=${getSingleLocation.latitude},${getSingleLocation.longitude}&key=${process.env.GOOGLE_MAPS_API_KEY}`
               );
-              console.log("response from api response",response.data.results)
-              const address = response.data.results[0].formatted_address;
+              const locationResults = response.data.results || [];
+              const approximateLocation = locationResults.find((item => item?.geometry?.location_type ==='APPROXIMATE' &&( item?.types?.includes('political') ||  item?.types?.includes('locality')) ))
+
+              const address = approximateLocation?.formatted_address;
               const data ={
                 lat:`${getSingleLocation.latitude}`,
                 lng:`${getSingleLocation.longitude}`,
@@ -277,10 +260,9 @@ const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       .catch((error) => {
         // Handle any errors
         console.log(error);
+        res.send({error:true ,message :err.message})
         // Send appropriate error response to the client or take other actions
       });
-      // console.log("//////////////////////////////////",addresses)
-      // return res.send(`The addresses for the given latitudes and longitudes are: ${addresses.join(", ")}`);
 
     }else{
       return res.send(
@@ -288,103 +270,6 @@ const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
       );
     }
       // }
-}
-
-
-//Sending Location information when location is fetched using google api
-const sendLocationToResponseloop =async(urls ,data) =>{
-  // let allUsersData = await usersDao.getAllusers();
-
-  // await Promise.all(allUsersData.map((userData, index) => {
-  //     let body = new URLSearchParams({ip: userData.ip});
-  //     return axios.post("http://myAPI", body).then((res) => {
-  //         allUsersData[index].countryCode = res.data.countryCode;
-  //     });
-  // }));
-  // // return allUsersData;
-  try{
-let resultArray=[]
-    await Promise.all(
-      urls.map((async(url)=>{
-        console.log("backurllllllllllllllllllll", url)
-        return axios({
-        method: 'post',
-        data,
-        url,
-      }).then((result)=>{
-        console.log("sendLocationSuccesFull",result);
-        // resolve(true)
-        resultArray.push(result)
-      }).catch((err)=>{
-        console.log("sendLocationError",err);
-        // reject(false)
-      })
-
-      }))
-    )
-    return resultArray
-  }catch(err){
-    console.log("errinaxioscalltowebhook",err);
-  }
-  // return new Promise(async(resolve,reject)=>{
-  //   try{
-  //     // for(const url of urls){
-  //     //   console.log("backurllllllllllllllllllll", url)
-  //     // }
-  //     urls.map((url=>console.log("backurllllllllllllllllllll", url)))
-  //     resolve()
-  //     await Promise.all(
-  //       urls.map((url=>{
-  //         console.log("backurllllllllllllllllllll", url)
-  //       }))
-    
-       
-  //     )// await axios({
-  //     //   method: 'post',
-  //     //   data,
-  //     //   url,
-  //     // }).then((result)=>{
-  //     //   console.log("sendLocationSuccesFull",result);
-  //     //   resolve(true)
-  //     // }).catch((err)=>{
-  //     //   console.log("sendLocationError",err);
-  //     //   reject(false)
-  //     // })
-  //   }catch(err){
-  //     console.log("SomeErrorOnSendLocation",err);
-  //     reject(false)
-  //   }
-  // })
-
-}
-
-const updateOrCreateLimit = (ip) =>{
-  return new Promise(async (resolve,reject)=>{
-    try{
-      // let limitExist = await limitModel.findAll({
-      //   limit : 1,
-      //   order:[['createdAt','DESC']]
-      // });
-      let limitExist = await limitModel.findOne()
-      console.log("#############################limit-",limitExist)
-
-      if (limitExist==null) {
-        limitExist = await limitModel.create({
-          ip: ip,
-          count: 1,
-        });
-        console.log("entry created" ,limitExist)
-        // isLimitAlreadyCreated =false
-      } else {
-        limitExist.count += 1;
-        limitExist.save();
-        
-      }
-      resolve(true)
-    }catch(err){
-      reject(err)
-    }
-  })
 }
 
 
