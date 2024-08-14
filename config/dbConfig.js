@@ -1,7 +1,14 @@
 import { Sequelize } from "sequelize";
+import dotenv from "dotenv";
+dotenv.config();
 
-export const sequelize = new Sequelize("location_service_rl", "location_service", "D1SEgzctx9yB0sPY", {
-  host: "mysql.responseloop.com",
+const database = process.env.MY_SQL_DATABASE;
+const dbUserName = process.env.MY_SQL_USERNAME;
+const dbPassword = process.env.MY_SQL_PASSWORD;
+const host = process.env.MY_SQL_HOST;
+
+export const sequelize = new Sequelize(database, dbUserName, dbPassword, {
+  host,
   port: 3306,
     dialect: "mysql",
     dialectOptions: {

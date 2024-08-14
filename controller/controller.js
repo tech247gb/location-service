@@ -201,42 +201,45 @@ const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
               );
               const locationResults = response.data.results || [];
               const approximateLocation = locationResults.find((item => item?.geometry?.location_type ==='APPROXIMATE' &&( item?.types?.includes('political') ||  item?.types?.includes('locality')) ))
+              if(approximateLocation){
 
-              const address = approximateLocation?.formatted_address;
-              const data ={
-                lat:`${getSingleLocation.latitude}`,
-                lng:`${getSingleLocation.longitude}`,
-                locationName:address
-              }
-              // await sendLocationToResponseloop(getSingleLocation.backUrl ,data)
-              await sendWebHook(getSingleLocation.backUrl ,data);
-              const add = await locModels.create({
-                Longitude: getSingleLocation.longitude,
-                Latitude: getSingleLocation.latitude,
-                Data: address,
-              });
-              console.log("address", address);
-              console.log("+++++++++++++)(((((((((((((((((", add);
-              const deleted = await queuedLocationModel.destroy({
-                where: { id: getSingleLocation.id },
-              });
-              console.log(
-                "number of deleted rows",
-                deleted
-              );
-              addresses.push(address);
-              // await updateOrCreateLimit(ip);
-              if (!limit) {
-                limit = await limitModel.create({
-                  ip: ip,
-                  count: 1,
+                const address = approximateLocation?.formatted_address;
+                const data ={
+                  lat:`${getSingleLocation.latitude}`,
+                  lng:`${getSingleLocation.longitude}`,
+                  locationName:address
+                }
+                // await sendLocationToResponseloop(getSingleLocation.backUrl ,data)
+                await sendWebHook(getSingleLocation.backUrl ,data);
+                const add = await locModels.create({
+                  Longitude: getSingleLocation.longitude,
+                  Latitude: getSingleLocation.latitude,
+                  Data: address,
                 });
-                console.log("entry created" ,limit)
-                // isLimitAlreadyCreated =false
-              } else {
-                limit.count += 1;
-                await limit.save();
-                
+                console.log("address", address);
+                console.log("+++++++++++++)(((((((((((((((((", add);
+                const deleted = await queuedLocationModel.destroy({
+                  where: { id: getSingleLocation.id },
+                });
+                console.log(
+                  "number of deleted rows",
+                  deleted
+                );
+                addresses.push(address);
+                // await updateOrCreateLimit(ip);
+                if (!limit) {
+                  limit = await limitModel.create({
+                    ip: ip,
+                    count: 1,
+                  });
+                  console.log("entry created" ,limit)
+                  // isLimitAlreadyCreated =false
+                } else {
+                  limit.count += 1;
+                  await limit.save();
+                  
+                }
+
               }
           
               resolve(); // Resolve the promise when the async operations are completed
