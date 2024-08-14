@@ -1,2 +1,61 @@
-node_modules
-.serverless
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+
+# Dependency directories
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# dotenv environment variable files
+.env
+.env.test
+
+# Serverless directory
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# Serverless Framework directory
+.serverless/
+
+# Temporary files
+*.tmp
+*.swp
+
+# IDEs and editors
+.vscode/
+
+
+# Windows thumbnail cache
+Thumbs.db
+
+# npm package-lock file
+package-lock.json
+
+# Yarn lock file (uncomment if using Yarn)
+# yarn.lock
+
+# Compiled JavaScript files
+dist/
+build/
+*.js
+*.jsx
+*.mjs
+
+
+# Production files
+/public/*
+!public/.gitkeep
+
+
